@@ -1,19 +1,59 @@
 # Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
+# Pull from Repo
+# Import Project into Docekr SOAtest CLI container and Run
+# Azure YAML docs:
 # https://aka.ms/yaml
 
 trigger:
 - main
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
 
+# Set Up Project
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
 - script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+    echo "Starting Pipeline Execution."
+    ls -lrth
+    cat <<'EOF' > deploy-aci.yml
+    apiVersion: '2019-12-01'
+    location: eastus
+    name: file-share-demo
+    properties:
+      containers:
+      - name: file-share-demo
+        properties:
+          environmentVariables: []
+          image: mcr.microsoft.com/azuredocs/aci-hellofiles
+          ports:
+          - port: 80
+          resources:
+            requests:
+              cpu: 1.0
+              memoryInGB: 1.5
+          volumeMounts:
+          - mountPath: /aci/logs/
+            name: parasoftfiles
+      osType: Linux
+      restartPolicy: Always
+      ipAddress:
+        type: Public
+        ports:
+          - port: 80
+        dnsNameLabel: aci-demo1234
+      volumes:
+      - name: parasoftfiles
+        azureFile:
+          sharename: parasoftfiles
+          storageAccountName: adoproject
+          storageAccountKey: liZ+KvFZBAgxHMDkb8z7MdV9NPFfma0M0EjtgFLG2Yk2InBwwkJXjGfpe5r6Ljexn8XKOnif1rrg+AStdt6c/w==
+    tags: {}
+    type: Microsoft.ContainerInstance/containerGroups
+    EOF
+
+      az login
+      az container create --resource-group ADOProject_group --file deploy-aci.yml
+      sleep 4m
+      nc -vz aci-demo1234.eastus.azurecontainer.io 80
+      az container stop --name  file-share-demo --resource-group ADOProject_group
+      az container delete --resource-group ADOProject_group --name file-share-demo
