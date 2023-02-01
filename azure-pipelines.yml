@@ -57,3 +57,9 @@ steps:
       nc -vz aci-demo1234.eastus.azurecontainer.io 80
       az container stop --name  file-share-demo --resource-group ADOProject_group
       az container delete --resource-group ADOProject_group --name file-share-demo
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'FilePath'
+    TargetPath: '/aci/logs'
